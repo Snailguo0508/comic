@@ -1,17 +1,29 @@
 import pymysql
 
+class MysqlConnectTool:
+    def __init__(self):
+        pass
 
-try:
-    connect = pymysql.connect("localHost","root","123","python")
-    cursor = connect.cursor()
-    print("数据库连接成功")
-    sql = "select * from user"
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    for row in data:
-        print(row)
-except:
-    print("数据库连接异常")
+    def getConnect(self):
+        try:
+            connect = pymysql.connect("localHost", "root", "123", "python")
+            print("获取数据库连接成功")
+            return connect;
+        except Exception as e:
+            print("获取数据库连接异常")
+            return None
+
+    def save(self,sql):
+        try:
+            conn = getConnect()
+
+            cursor.execute(sql)
+            conn.commit()
+        except Exception as e:
+            print("保存数据异常")
+            connrollback()
+        conn.close()
+
 
 
 
