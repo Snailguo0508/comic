@@ -21,8 +21,9 @@ def getLocation():
         print(e)
     if results is not None:
         for result in  results:
-            location = result[0]
-            urlList.append(location.replace("https","http"))
+            location = result[0].replace("https","http")
+
+            urlList.append(location)
     return urlList
 
 def getListHtml(url):
@@ -73,21 +74,50 @@ def getPath(targetDir,path,num):
     t = os.path.join(targetDir, '%s.jpg'%num)
     return t
 
+def httpGet(url):
+    try:
+        urlopen(url)
+    except HTTPError as h
+        print("请求异常,url = " + url)
+        return None
+    else:
+        html = BeautifulSoup(url,"lxml")
+
+
+def downloadPic(name,picUrl):
+    file = "E:\\"+ name + "\\" + title
+    num = 1
+    path = getPath(file, pic, num)
+    request.urlretrieve(pic, path, Schedule)
+
+def download(listSource):
+    for source in listSource:
+        title = JsonUtil.getHtmlResult(r'title=\"(.*?)\"', source)
+        mainUrl = JsonUtil.getHtmlResult(r'href=\"(.*?)\"', source)
+        mainUrl = localList[0] + mainUrl
+        mainHtml = httpGet(mainUrl)
+        if mainUrl is not None:
+            picUrl = JsonUtil.getHtmlResult(r'mhurl=\"(.*?jpg)\"', mainHtml.decode())
+            name = JsonUtil.getHtmlResult(r'CTitle=\"(.*?)\"', source)
+            pic = "http://p1.xiaoshidi.net/" + picUrl
+            if pic.index("2015") ==-1 or pic.index("2016")==-1 or pic.index("2017")==-1 or pic.index("2018")==-1:
+                pic = pic.replace("p1","p0")
+            downloadPic(name, picUrl)
+        else:
+            print("页面为空,url = " + mainUrl)
+
+
+
 
 localList = getLocation();
-
-listArray = getListHtml(localList[41])
-
-listSource = getListCode(listArray)
-for source in  listSource:
-    title = JsonUtil.getHtmlResult(r'title=\"(.*?)\"', source)
-    mainUrl = JsonUtil.getHtmlResult(r'href=\"(.*?)\"', source)
-    mainUrl = localList[0] + mainUrl
-    mainObj = urlopen(mainUrl)
-    mainHtml = BeautifulSoup(mainObj, "lxml")
-    picUrl = JsonUtil.getHtmlResult(r'mhurl=\"(.*?jpg)\"', mainHtml.decode())
-    size = JsonUtil.getHtmlResult(r'mhurl=\"(.*?jpg)\"', mainHtml.decode())
-    pic = "http://p1.xiaoshidi.net/" + picUrl
+for url in localList:
+    listArray = getListHtml(url)
+    if len(listArray):
+        listSource = getListCode(listArray)
+        if len(listSource):
+            download(listSource)
+    else:
+        print(name + "列表页为空, url = " + url)
 
 
 
@@ -95,10 +125,8 @@ for source in  listSource:
 
 
 
-file = "E:\海贼王"  + "\\"+ title
-num = 1
-path = getPath(file,pic,num)
 
-request.urlretrieve(pic,path,Schedule)
+
+
 
 
