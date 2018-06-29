@@ -10,6 +10,7 @@ import os
 
 urlList = []
 
+#从数据库获取漫画的网页地址
 def getLocation():
     try:
         connect = pymysql.connect("localhost", "root", "123", "python", use_unicode=True, charset="utf8")
@@ -26,6 +27,7 @@ def getLocation():
             urlList.append(location)
     return urlList
 
+#获取网页源码 并获取漫画列表固定区域源码
 def getListHtml(url):
     try:
         result = urlopen(url)
@@ -40,6 +42,7 @@ def getListHtml(url):
         return None
     return list;
 
+#解析HTML源码  通过正则匹配出相应结果
 def getListCode(webCode):
     listArray = []
     try:
@@ -52,6 +55,7 @@ def getListCode(webCode):
         return None
     else:
         return listArray
+
 
 def Schedule(a, b, c):
     '''
@@ -66,56 +70,67 @@ def Schedule(a, b, c):
     print('%.2f%%' % per)
 
 
+# 创建图片下载的路径
 
-def getPath(targetDir,path,num):
-    if not os.path.exists(targetDir): #判断目录是否存在
-        os.makedirs(targetDir) #创建多级目录
-    pos = path.rindex('/')
-    t = os.path.join(targetDir, '%s.jpg'%num)
-    return t
 
+#请求漫画正文  获取源码
 def httpGet(url):
     try:
-        urlopen(url)
-    except HTTPError as h
-        print("请求异常,url = " + url)
+        htmlObj = urlopen(url)
+    except HTTPError as h:
+        print("请求异常,url = " + url + ",状态码：e.code")
         return None
     else:
-        html = BeautifulSoup(url,"lxml")
+        html = BeautifulSoup(htmlObj,"lxml")
+        return html
 
-
-def downloadPic(name,picUrl):
+#下载漫画到指定路径
+def downloadPic(name,title,pic,num):
     file = "E:\\"+ name + "\\" + title
-    num = 1
-    path = getPath(file, pic, num)
+    if not os.path.exists(file): #判断目录是否存在
+        os.makedirs(file) #创建多级目录
+    path = os.path.join(file, '%s.jpg'%num)
     request.urlretrieve(pic, path, Schedule)
+
 
 def download(listSource):
     for source in listSource:
         title = JsonUtil.getHtmlResult(r'title=\"(.*?)\"', source)
         mainUrl = JsonUtil.getHtmlResult(r'href=\"(.*?)\"', source)
         mainUrl = localList[0] + mainUrl
-        mainHtml = httpGet(mainUrl)
-        if mainUrl is not None:
-            picUrl = JsonUtil.getHtmlResult(r'mhurl=\"(.*?jpg)\"', mainHtml.decode())
-            name = JsonUtil.getHtmlResult(r'CTitle=\"(.*?)\"', source)
-            pic = "http://p1.xiaoshidi.net/" + picUrl
-            if pic.index("2015") ==-1 or pic.index("2016")==-1 or pic.index("2017")==-1 or pic.index("2018")==-1:
-                pic = pic.replace("p1","p0")
-            downloadPic(name, picUrl)
-        else:
-            print("页面为空,url = " + mainUrl)
+        downloadComic = True
+        num = 0;
+        while downloadComic:
+            if mainUrl.find("index") == -1:
+                mainUrl = mainUrl + "index_" + str(num) + ".html"
+            else:
+                mainUrl = mainUrl.split("index")[0] + "index_" + str(num) + ".html"
+            mainHtml = httpGet(mainUrl)
+
+            if mainHtml is not None:
+                picUrl = JsonUtil.getHtmlResult(r'mhurl=\"(.*?jpg)\"', mainHtml.decode())
+                name = JsonUtil.getHtmlResult(r'CTitle=\"(.*?)\"', mainHtml.decode())
+                if picUrl.find("http") == -1:
+                    picUrl = "http://p1.xiaoshidi.net/" + picUrl
+                pic = picUrl
+                if pic.find("2015") == -1 or pic.find("2016") == -1 or pic.find("2017") == -1 or pic.find("2018") == -1:
+                    pic = pic.replace("p1", "p0")
+                downloadPic(name, title, pic,(num+1))
+                downloadComic = True
+                num += 1
+            else:
+                print("页面为空,url = " + mainUrl)
+                downloadComic = False
 
 
 
 
 localList = getLocation();
-for url in localList:
-    listArray = getListHtml(url)
-    if len(listArray):
-        listSource = getListCode(listArray)
-        if len(listSource):
-            download(listSource)
+listArray = getListHtml(localList[0])
+if len(listArray):
+    listSource = getListCode(listArray)
+    if len(listSource):
+        download(listSource)
     else:
         print(name + "列表页为空, url = " + url)
 
